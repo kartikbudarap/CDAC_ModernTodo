@@ -125,7 +125,7 @@ This project leverages **four cloud services** from Google Cloud and Firebase to
 ## Setup Locally
 
 ```bash
-git clone https://github.com/kartikbudarap/ModernTodo_CDAC.git
+git clone https://github.com/kartikbudarap/CDAC_ModernTodo.git
 cd modern-todo-app
 # Open index.html directly or run a Live Server (like the VS Code extension)
 ```
