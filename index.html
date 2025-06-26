@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Todo</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-functions-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --bg-primary: #0f0f23;
+            --bg-secondary: #1a1a2e;
+            --bg-card: rgba(255, 255, 255, 0.05);
+            --accent: #6366f1;
+            --accent-hover: #5855eb;
+            --accent-light: rgba(99, 102, 241, 0.1);
+            --text-primary: #ffffff;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.4);
+            --blur: blur(20px);
+        }
+        
+        [data-theme="light"] {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #e2e8f0;
+            --bg-card: rgba(255, 255, 255, 0.8);
+            --accent: #6366f1;
+            --accent-hover: #5855eb;
+            --accent-light: rgba(99, 102, 241, 0.1);
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --border: rgba(0, 0, 0, 0.1);
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.15);
+            --blur: blur(20px);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Animated background elements */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.03) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+            z-index: -1;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(30px, -30px) rotate(120deg); }
+            66% { transform: translate(-20px, 20px) rotate(240deg); }
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: slideDown 0.8s ease-out;
+            position: relative;
+        }
+        
+        .theme-toggle {
+            position: absolute;
+            top: 0;
+            right: 0px;
+            background: var(--bg-card);
+            backdrop-filter: var(--blur);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            gap: 8px;
+            width: 80px;
+            height: 40px;
+            position: relative;
+        }
+        
+        .theme-toggle:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow);
+        }
+        
+        .theme-toggle::before {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 32px;
+            height: 32px;
+            background: var(--accent);
+            border-radius: 50%;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1;
+        }
+        
+        [data-theme="light"] .theme-toggle::before {
+            transform: translateX(40px);
+        }
+        
+        .theme-icon {
+            font-size: 16px;
+            z-index: 2;
+            transition: all 0.3s ease;
+        }
+        
+        .theme-icon.sun {
+            opacity: 0;
+            transform: rotate(180deg);
+        }
+        
+        .theme-icon.moon {
+            opacity: 1;
+            transform: rotate(0deg);
+        }
+        
+        [data-theme="light"] .theme-icon.sun {
+            opacity: 1;
+            transform: rotate(0deg);
+        }
+        
+        [data-theme="light"] .theme-icon.moon {
+            opacity: 0;
+            transform: rotate(-180deg);
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .header h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+        
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+        
+        .input-section {
+            background: var(--bg-card);
+            backdrop-filter: var(--blur);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 32px;
+            box-shadow: var(--shadow);
+            animation: slideUp 0.8s ease-out 0.2s both;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .input-form {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+        
+        #todo-input {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 16px;
+            font-weight: 400;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+        
+        #todo-input::placeholder {
+            color: var(--text-muted);
+        }
+        
+        #todo-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-light);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .add-btn {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 16px 24px;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            min-width: 80px;
+        }
+        
+        .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+        }
+        
+        .add-btn:active {
+            transform: translateY(0);
+        }
+        
+        .todo-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .todo-item {
+            background: var(--bg-card);
+            backdrop-filter: var(--blur);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.3s ease;
+            animation: todoSlideIn 0.5s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .todo-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+            transition: left 0.5s;
+        }
+        
+        .todo-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .todo-item:hover::before {
+            left: 100%;
+        }
+        
+        @keyframes todoSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .custom-checkbox {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0;
+            position: relative;
+        }
+        
+        .custom-checkbox::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            transform: scale(0);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .checkbox-input:checked + .custom-checkbox {
+            border-color: var(--success);
+            background: rgba(34, 197, 94, 0.1);
+        }
+        
+        .checkbox-input:checked + .custom-checkbox::after {
+            transform: scale(1);
+        }
+        
+        .checkbox-input {
+            display: none;
+        }
+        
+        .todo-text {
+            flex: 1;
+            font-size: 16px;
+            font-weight: 400;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            line-height: 1.5;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 2px solid transparent;
+        }
+        
+        .todo-text.editing {
+            background: var(--bg-card);
+            border-color: var(--accent);
+            outline: none;
+            cursor: text;
+        }
+        
+        .checkbox-input:checked + .custom-checkbox + .todo-text {
+            color: var(--text-muted);
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        
+        .todo-actions {
+            display: flex;
+            gap: 8px;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .todo-item:hover .todo-actions {
+            opacity: 1;
+        }
+        
+        .edit-btn,
+        .save-btn,
+        .cancel-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .edit-btn:hover {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--accent);
+            transform: scale(1.1);
+        }
+        
+        .save-btn:hover {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+            transform: scale(1.1);
+        }
+        
+        .cancel-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            transform: scale(1.1);
+        }
+        
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .delete-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            transform: scale(1.1);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        .empty-state h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+        
+        .empty-state p {
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* Responsive design */
+        @media (max-width: 640px) {
+            .container {
+                padding: 0 16px;
+            }
+            
+            .input-form {
+                flex-direction: column;
+                gap: 16px;
+            }
+            
+            .add-btn {
+                width: 100%;
+                padding: 16px;
+            }
+            
+            .todo-item {
+                padding: 16px;
+            }
+            
+            .header h1 {
+                font-size: 2.5rem;
+            }
+        }
+        
+        /* Smooth scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* Auth Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            margin: 10% auto;
+            padding: 2rem;
+            border-radius: 16px;
+            max-width: 400px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+        }
+
+        .close-modal {
+            float: right;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 1.5rem;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 0.75rem;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-secondary);
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .tab-btn.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .auth-form input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .auth-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .google-btn {
+            background: #4285F4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .google-btn:hover {
+            background: #3367D6;
+        }
+
+        .auth-divider {
+            text-align: center;
+            margin: 1rem 0;
+            color: var(--text-muted);
+            position: relative;
+        }
+
+        .auth-divider::before,
+        .auth-divider::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            width: 45%;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .auth-divider::before {
+            left: 0;
+        }
+
+        .auth-divider::after {
+            right: 0;
+        }
+
+        /* Toaster Styles */
+        .toaster {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-light);
+            color: var(--text);
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border-left: 4px solid var(--warning);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .toaster.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toaster.hide {
+            opacity: 0;
+            transform: translateX(-50%) translateY(20px);
+        }
+
+        .toaster i {
+            font-size: 1.2rem;
+            color: var(--warning);
+        }
+
+        /* User Profile */
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .logout-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            color: var(--danger);
+            background: rgba(239, 68, 68, 0.1);
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="container">
+        <div class="header">
+            <div class="theme-toggle" id="theme-toggle">
+                <span class="theme-icon sun">☀️</span>
+                <span class="theme-icon moon">🌙</span>
+            </div>
+            <div class="user-profile" id="user-profile" style="display: none;">
+                <div class="user-avatar" id="user-avatar">U</div>
+                <button class="logout-btn" id="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+            <h1>Tasks</h1>
+            <p>Your beautiful productivity companion</p>
+        </div>
+        
+        <div class="input-section">
+            <form class="input-form" id="todo-form">
+                <div class="input-wrapper">
+                    <input 
+                        type="text" 
+                        id="todo-input" 
+                        placeholder="What needs to be done?" 
+                        autocomplete="off"
+                    >
+                </div>
+                <button type="submit" class="add-btn">Add</button>
+            </form>
+        </div>
+        
+        <ul class="todo-list" id="todo-list">
+            <!-- Todos will be inserted here -->
+        </ul>
+        
+        <div class="empty-state" id="empty-state" style="display: none;">
+            <div class="empty-state-icon">✨</div>
+            <h3>All caught up!</h3>
+            <p>You have no tasks. Add one above to get started.</p>
+        </div>
+    </div>
+
+    <!-- Auth Modal -->
+    <div id="auth-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div class="auth-tabs">
+                <button class="tab-btn active" data-tab="login">Login</button>
+                <button class="tab-btn" data-tab="signup">Sign Up</button>
+            </div>
+            
+            <div id="login-form" class="auth-form">
+                <input type="email" id="login-email" placeholder="Email">
+                <input type="password" id="login-password" placeholder="Password">
+                <button id="login-btn" class="auth-btn">Login</button>
+                <div class="auth-divider">or</div>
+                <button id="google-login" class="auth-btn google-btn">
+                    <i class="fab fa-google"></i> Continue with Google
+                </button>
+            </div>
+            
+            <div id="signup-form" class="auth-form" style="display:none;">
+                <input type="text" id="signup-name" placeholder="Name">
+                <input type="email" id="signup-email" placeholder="Email">
+                <input type="password" id="signup-password" placeholder="Password">
+                <button id="signup-btn" class="auth-btn">Create Account</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toaster -->
+    <div id="toaster" class="toaster">
+        <i class="fas fa-info-circle"></i>
+        <span id="toaster-message">This feature is coming soon!</span>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+        apiKey: "FIREBASE_API_KEY", //replace with your api
+        authDomain: "moderntodo-e5191.firebaseapp.com",  // Must end with firebaseapp.com
+        projectId: "moderntodo-e5191",
+        storageBucket: "moderntodo-e5191.appspot.com",  // Must end with appspot.com
+        messagingSenderId: "521134263754",
+        appId: "1:521134263754:web:0de40d3bb3fccaa116d333",
+        measurementId: "G-NZXQZKLRP3"
+        };
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        const functions = firebase.functions();
+
+        class ModernTodoApp {
+            constructor() {
+                this.todoForm = document.getElementById('todo-form');
+                this.todoInput = document.getElementById('todo-input');
+                this.todoList = document.getElementById('todo-list');
+                this.emptyState = document.getElementById('empty-state');
+                this.themeToggle = document.getElementById('theme-toggle');
+                this.authModal = document.getElementById('auth-modal');
+                this.userProfile = document.getElementById('user-profile');
+                this.userAvatar = document.getElementById('user-avatar');
+                this.logoutBtn = document.getElementById('logout-btn');
+                this.currentUser = null;
+                this.unsubscribe = null;
+                this.editingId = null;
+                
+                this.init();
+                this.initAuth();
+                this.initToaster();
+            }
+            
+            init() {
+                this.todoForm.addEventListener('submit', (e) => this.handleSubmit(e));
+                this.themeToggle.addEventListener('click', () => this.toggleTheme());
+                this.loadTheme();
+            }
+            
+           initAuth() {
+  auth.onAuthStateChanged((user) => {
+    this.currentUser = user;
+    
+    // ADD THIS SECTION RIGHT HERE:
+    if (user) {
+      const userRef = db.collection("users").doc(user.uid);
+      
+      userRef.get().then((doc) => {
+        if (!doc.exists) {
+          userRef.set({
+            name: user.displayName || "User",
+            email: user.email,
+            todos: [], // Initialize empty todos array
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          }).then(() => {
+            console.log("New user document created");
+          });
+        }
+      });
+    }
+    // END OF ADDED SECTION
+    
+    if (user) {
+      this.updateUserProfile(user);
+      this.initRealtimeUpdates();
+      this.authModal.style.display = 'none';
+      this.userProfile.style.display = 'flex';
+    } else {
+      this.authModal.style.display = 'block';
+      this.userProfile.style.display = 'none';
+      this.todos = [];
+      this.renderTodos();
+    }
+  });
+
+                
+                // Setup auth UI events
+                document.getElementById('login-btn').addEventListener('click', () => this.emailLogin());
+                document.getElementById('signup-btn').addEventListener('click', () => this.emailSignup());
+                document.getElementById('google-login').addEventListener('click', () => this.googleLogin());
+                this.logoutBtn.addEventListener('click', () => this.logout());
+                
+                // Tab switching
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const tab = e.target.dataset.tab;
+                        document.querySelectorAll('.auth-form').forEach(form => form.style.display = 'none');
+                        document.getElementById(`${tab}-form`).style.display = 'flex';
+                        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                    });
+                });
+                
+                // Close modal
+                document.querySelector('.close-modal').addEventListener('click', () => {
+                    this.authModal.style.display = 'none';
+                });
+            }
+            
+            initRealtimeUpdates() {
+                if (this.unsubscribe) {
+                    this.unsubscribe();
+                }
+                
+                this.unsubscribe = db.collection("users").doc(this.currentUser.uid)
+                    .onSnapshot((doc) => {
+                        if (doc.exists) {
+                            this.todos = doc.data().todos || [];
+                            this.renderTodos();
+                        } else {
+                            this.todos = [];
+                            this.renderTodos();
+                        }
+                    });
+            }
+            
+            initToaster() {
+                this.toaster = document.getElementById('toaster');
+                this.toasterMessage = document.getElementById('toaster-message');
+            }
+            
+            showToaster(message) {
+                this.toasterMessage.textContent = message;
+                this.toaster.classList.remove('hide');
+                this.toaster.classList.add('show');
+                
+                setTimeout(() => {
+                    this.toaster.classList.remove('show');
+                    this.toaster.classList.add('hide');
+                }, 3000);
+            }
+            
+            updateUserProfile(user) {
+                const displayName = user.displayName || 'User';
+                const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase();
+                this.userAvatar.textContent = initials;
+            }
+            
+            async emailLogin() {
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                
+                try {
+                    await auth.signInWithEmailAndPassword(email, password);
+                } catch (error) {
+                    this.showToaster(error.message);
+                }
+            }
+            
+            async emailSignup() {
+                const name = document.getElementById('signup-name').value;
+                const email = document.getElementById('signup-email').value;
+                const password = document.getElementById('signup-password').value;
+                
+                try {
+                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                    await userCredential.user.updateProfile({ displayName: name });
+                    await db.collection("users").doc(userCredential.user.uid).set({
+                        name,
+                        email,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        todos: []
+                    });
+                } catch (error) {
+                    this.showToaster(error.message);
+                }
+            }
+            
+            async googleLogin() {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                try {
+                    await auth.signInWithPopup(provider);
+                } catch (error) {
+                    this.showToaster(error.message);
+                }
+            }
+            
+            async logout() {
+                try {
+                    await auth.signOut();
+                } catch (error) {
+                    this.showToaster(error.message);
+                }
+            }
+            
+            toggleTheme() {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+            }
+            
+            loadTheme() {
+                const savedTheme = localStorage.getItem('theme') || 'dark';
+                document.documentElement.setAttribute('data-theme', savedTheme);
+            }
+            
+            handleSubmit(e) {
+                e.preventDefault();
+                if (this.editingId) {
+                    this.saveEdit();
+                } else {
+                    this.addTodo();
+                }
+            }
+            
+            async addTodo() {
+                const text = this.todoInput.value.trim();
+                if (text.length === 0) return;
+                
+                const newTodo = {
+                    id: Date.now(),
+                    text: text,
+                    completed: false,
+                    createdAt: new Date().toISOString()
+                };
+                
+                if (this.currentUser) {
+                    try {
+                        await db.collection("users").doc(this.currentUser.uid).update({
+                            todos: firebase.firestore.FieldValue.arrayUnion(newTodo)
+                        });
+                        this.todoInput.value = '';
+                    } catch (error) {
+                        this.showToaster(error.message);
+                    }
+                } else {
+                    this.todos.unshift(newTodo);
+                    this.todoInput.value = '';
+                    this.saveTodos();
+                    this.renderTodos();
+                }
+                
+                // Add subtle animation feedback
+                this.todoInput.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    this.todoInput.style.transform = 'scale(1)';
+                }, 100);
+            }
+            
+            editTodo(id) {
+                if (this.editingId) {
+                    this.cancelEdit();
+                }
+                
+                this.editingId = id;
+                const todo = this.todos.find(t => t.id === id);
+                const todoElement = document.querySelector(`[data-id="${id}"]`);
+                const textElement = todoElement.querySelector('.todo-text');
+                const actionsElement = todoElement.querySelector('.todo-actions');
+                
+                // Make text editable
+                textElement.contentEditable = true;
+                textElement.classList.add('editing');
+                textElement.focus();
+                
+                // Select all text
+                const range = document.createRange();
+                range.selectNodeContents(textElement);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                
+                // Update action buttons
+                actionsElement.innerHTML = `
+                    <button class="save-btn" data-id="${id}">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20,6 9,17 4,12"></polyline>
+                        </svg>
+                    </button>
+                    <button class="cancel-btn" data-id="${id}">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                `;
+                
+                // Add event listeners
+                actionsElement.querySelector('.save-btn').addEventListener('click', () => this.saveEdit());
+                actionsElement.querySelector('.cancel-btn').addEventListener('click', () => this.cancelEdit());
+                
+                // Handle Enter and Escape keys
+                textElement.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        this.saveEdit();
+                    } else if (e.key === 'Escape') {
+                        this.cancelEdit();
+                    }
+                });
+            }
+            
+            async saveEdit() {
+                if (!this.editingId) return;
+                
+                const todoElement = document.querySelector(`[data-id="${this.editingId}"]`);
+                const textElement = todoElement.querySelector('.todo-text');
+                const newText = textElement.textContent.trim();
+                
+                if (newText.length === 0) {
+                    this.deleteTodo(this.editingId);
+                    return;
+                }
+                
+                if (this.currentUser) {
+                    try {
+                        const todoIndex = this.todos.findIndex(t => t.id === this.editingId);
+                        if (todoIndex !== -1) {
+                            const updatedTodos = [...this.todos];
+                            updatedTodos[todoIndex] = {
+                                ...updatedTodos[todoIndex],
+                                text: newText
+                            };
+                            
+                            await db.collection("users").doc(this.currentUser.uid).update({
+                                todos: updatedTodos
+                            });
+                        }
+                    } catch (error) {
+                        this.showToaster(error.message);
+                    }
+                } else {
+                    const todo = this.todos.find(t => t.id === this.editingId);
+                    if (todo) {
+                        todo.text = newText;
+                        this.saveTodos();
+                    }
+                }
+                
+                this.editingId = null;
+                this.renderTodos();
+            }
+            
+            cancelEdit() {
+                if (!this.editingId) return;
+                
+                this.editingId = null;
+                this.renderTodos();
+            }
+            
+            async deleteTodo(id) {
+                const todoElement = document.querySelector(`[data-id="${id}"]`);
+                if (todoElement) {
+                    todoElement.style.transform = 'translateX(-100%)';
+                    todoElement.style.opacity = '0';
+                    
+                    setTimeout(async () => {
+                        if (this.currentUser) {
+                            try {
+                                const updatedTodos = this.todos.filter(todo => todo.id !== id);
+                                await db.collection("users").doc(this.currentUser.uid).update({
+                                    todos: updatedTodos
+                                });
+                            } catch (error) {
+                                this.showToaster(error.message);
+                            }
+                        } else {
+                            this.todos = this.todos.filter(todo => todo.id !== id);
+                            this.saveTodos();
+                            this.renderTodos();
+                        }
+                    }, 300);
+                }
+            }
+            
+            async toggleTodo(id) {
+                if (this.currentUser) {
+                    try {
+                        const todoIndex = this.todos.findIndex(t => t.id === id);
+                        if (todoIndex !== -1) {
+                            const updatedTodos = [...this.todos];
+                            updatedTodos[todoIndex] = {
+                                ...updatedTodos[todoIndex],
+                                completed: !updatedTodos[todoIndex].completed
+                            };
+                            
+                            await db.collection("users").doc(this.currentUser.uid).update({
+                                todos: updatedTodos
+                            });
+                        }
+                    } catch (error) {
+                        this.showToaster(error.message);
+                    }
+                } else {
+                    const todo = this.todos.find(t => t.id === id);
+                    if (todo) {
+                        todo.completed = !todo.completed;
+                        this.saveTodos();
+                    }
+                }
+            }
+            
+            createTodoElement(todo) {
+                return `
+                    <li class="todo-item" data-id="${todo.id}">
+                        <input type="checkbox" id="todo-${todo.id}" class="checkbox-input" ${todo.completed ? 'checked' : ''}>
+                        <label for="todo-${todo.id}" class="custom-checkbox"></label>
+                        <div class="todo-text" data-id="${todo.id}">${this.escapeHtml(todo.text)}</div>
+                        <div class="todo-actions">
+                            <button class="edit-btn" data-id="${todo.id}">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </button>
+                            <button class="delete-btn" data-id="${todo.id}">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 6h18"></path>
+                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                    <path d="M8 6V4c0-1 1-2 2-2h4c-1 0 2 1 2 2v2"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </li>
+                `;
+            }
+            
+            renderTodos() {
+                if (this.todos.length === 0) {
+                    this.todoList.style.display = 'none';
+                    this.emptyState.style.display = 'block';
+                    return;
+                }
+                
+                this.todoList.style.display = 'flex';
+                this.emptyState.style.display = 'none';
+                
+                this.todoList.innerHTML = this.todos.map(todo => this.createTodoElement(todo)).join('');
+                
+                // Add event listeners
+                this.todoList.querySelectorAll('.checkbox-input').forEach(checkbox => {
+                    checkbox.addEventListener('change', (e) => {
+                        const id = parseInt(e.target.id.replace('todo-', ''));
+                        this.toggleTodo(id);
+                    });
+                });
+                
+                this.todoList.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = parseInt(e.currentTarget.dataset.id);
+                        this.editTodo(id);
+                    });
+                });
+                
+                this.todoList.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = parseInt(e.currentTarget.dataset.id);
+                        this.deleteTodo(id);
+                    });
+                });
+            }
+            
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            saveTodos() {
+                localStorage.setItem('modern-todos', JSON.stringify(this.todos));
+            }
+            
+            getTodos() {
+                try {
+                    return JSON.parse(localStorage.getItem('modern-todos') || '[]');
+                } catch {
+                    return [];
+                }
+            }
+        }
+        
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new ModernTodoApp();
+        });
+    </script>
+</body>
+</html>

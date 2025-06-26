@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Modern Todo - Productivity Redefined</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-light: #818cf8;
+      --primary-dark: #4f46e5;
+      --secondary: #1e293b;
+      --bg: #0f172a;
+      --bg-light: #1e293b;
+      --text: #f1f5f9;
+      --text-light: #e2e8f0;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --card-bg: rgba(30, 41, 59, 0.5);
+      --card-border: rgba(255, 255, 255, 0.1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* Toaster Styles */
+.toaster {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-light);
+  color: var(--text);
+  padding: 12px 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-left: 4px solid var(--warning);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 1000;
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.toaster.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.toaster.hide {
+  opacity: 0;
+  transform: translateX(-50%) translateY(20px);
+}
+
+.toaster i {
+  font-size: 1.2rem;
+  color: var(--warning);
+}
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 2rem;
+      max-width: 1400px;
+      margin: auto;
+      position: relative;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo-icon {
+      color: var(--primary);
+      font-size: 1.8rem;
+    }
+
+    .logo-text {
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: linear-gradient(to right, var(--primary), var(--primary-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header nav {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    header nav a {
+      text-decoration: none;
+      color: var(--text);
+      font-weight: 500;
+      transition: all 0.3s;
+      position: relative;
+    }
+
+    header nav a:after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 2px;
+      bottom: -4px;
+      left: 0;
+      background-color: var(--primary);
+      transition: width 0.3s;
+    }
+
+    header nav a:hover:after {
+      width: 100%;
+    }
+
+    header nav a:hover {
+      color: var(--primary-light);
+    }
+
+    .cta-button {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      background: var(--primary);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+
+    .cta-button:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    /* Hero Section */
+    .hero {
+      text-align: center;
+      padding: 8rem 2rem 1rem;
+      position: relative;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -20%;
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(15, 23, 42, 0) 70%);
+      z-index: -1;
+    }
+
+    .hero-content {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .hero h2 {
+      font-size: 3.5rem;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(to right, var(--primary), var(--primary-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      font-size: 1.25rem;
+      color: var(--text-light);
+      margin-bottom: 2.5rem;
+      opacity: 0.9;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin-bottom: 3rem;
+    }
+
+    .secondary-button {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      background: transparent;
+      border: 2px solid var(--primary);
+      border-radius: 8px;
+      color: var(--primary);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .secondary-button:hover {
+      background: rgba(99, 102, 241, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .hero-image {
+      max-width: 1000px;
+      margin: 0 auto;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--card-border);
+      position: relative;
+    }
+
+    .hero-image img {
+      width: 100%;
+      display: block;
+    }
+
+    .hero-image::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(15, 23, 42, 0.1), rgba(15, 23, 42, 0.8));
+    }
+
+    /* Features Section */
+    .features {
+      max-width: 1400px;
+      margin: 6rem auto;
+      padding: 0 2rem;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    .section-header h3 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      color: var(--text-light);
+    }
+
+    .section-header p {
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+
+    .feature-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 2rem;
+      transition: all 0.3s;
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(10px);
+      position: relative;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+      border-color: rgba(99, 102, 241, 0.3);
+    }
+
+    .feature-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1.5rem;
+      color: var(--primary);
+    }
+
+    .feature-card h4 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      color: var(--text-light);
+    }
+
+    .feature-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+    }
+
+    /* Stats Section */
+    .stats {
+      max-width: 1400px;
+      margin: 6rem auto;
+      padding: 4rem 2rem;
+      background: var(--card-bg);
+      border-radius: 16px;
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(10px);
+      display: none;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 2rem;
+      text-align: center;
+    }
+
+    .stat-item h3 {
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-item p {
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* Testimonials */
+    .testimonials {
+      max-width: 1400px;
+      margin: 6rem auto;
+      padding: 0 2rem;
+      display: none;
+    }
+
+    .testimonial-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+
+    .testimonial-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 2rem;
+      border: 1px solid var(--card-border);
+      transition: all 0.3s;
+    }
+
+    .testimonial-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .testimonial-text {
+      font-style: italic;
+      margin-bottom: 1.5rem;
+      color: var(--text-light);
+    }
+
+    .testimonial-author {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .author-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .author-info h5 {
+      color: var(--text-light);
+      margin-bottom: 0.25rem;
+    }
+
+    .author-info p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* Pricing */
+    .pricing {
+      max-width: 1400px;
+      margin: 6rem auto;
+      padding: 0 2rem;
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+
+    .pricing-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      border: 1px solid var(--card-border);
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pricing-card.popular {
+      border-color: var(--primary);
+    }
+
+    .popular-badge {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background: var(--primary);
+      color: white;
+      padding: 0.25rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border-bottom-left-radius: 8px;
+    }
+
+    .pricing-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .pricing-header {
+      margin-bottom: 2rem;
+    }
+
+    .pricing-header h4 {
+      font-size: 1.5rem;
+      color: var(--text-light);
+      margin-bottom: 0.5rem;
+    }
+
+    .pricing-header .price {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--text-light);
+    }
+
+    .pricing-header .price span {
+      font-size: 1rem;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .pricing-features {
+      margin-bottom: 2rem;
+    }
+
+    .pricing-features li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .pricing-features li i {
+      color: var(--success);
+    }
+
+    /* CTA Section */
+    .cta {
+      max-width: 1400px;
+      margin: 6rem auto;
+      padding: 4rem 2rem;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border-radius: 16px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -20%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, rgba(99, 102, 241, 0) 70%);
+      z-index: 1;
+    }
+
+    .cta-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .cta h3 {
+      font-size: 2.5rem;
+      color: white;
+      margin-bottom: 1.5rem;
+    }
+
+    .cta p {
+      color: rgba(255, 255, 255, 0.8);
+      max-width: 600px;
+      margin: 0 auto 2.5rem;
+    }
+
+    /* Footer */
+    footer {
+      background: var(--bg-light);
+      padding: 4rem 2rem 2rem;
+    }
+
+    .footer-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 3rem;
+    }
+
+    .footer-column h4 {
+      color: var(--text-light);
+      margin-bottom: 1.5rem;
+      font-size: 1.1rem;
+    }
+
+    .footer-links {
+      list-style: none;
+    }
+
+    .footer-links li {
+      margin-bottom: 0.75rem;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    .footer-links a:hover {
+      color: var(--primary-light);
+    }
+
+    .social-links {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .social-links a {
+      color: var(--text-muted);
+      font-size: 1.25rem;
+      transition: color 0.3s;
+    }
+
+    .social-links a:hover {
+      color: var(--primary-light);
+    }
+
+    .footer-bottom {
+      max-width: 1400px;
+      margin: 3rem auto 0;
+      padding-top: 2rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* Animations */
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+      100% { transform: translateY(0px); }
+    }
+
+    .floating {
+      animation: float 6s ease-in-out infinite;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .hero h2 {
+        font-size: 3rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      header nav {
+        display: none;
+      }
+
+      .mobile-menu-btn {
+        display: block;
+      }
+
+      .hero {
+        padding: 6rem 1.5rem 4rem;
+      }
+
+      .hero h2 {
+        font-size: 2.5rem;
+      }
+
+      .hero p {
+        font-size: 1.1rem;
+      }
+
+      .hero-buttons {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .section-header h3 {
+        font-size: 2rem;
+      }
+    }
+
+    
+
+    a{
+        text-decoration: none;
+    }
+
+    @media (max-width: 480px) {
+      .hero h2 {
+        font-size: 2rem;
+      }
+
+      .logo-text {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">
+      <i class="fas fa-check-circle logo-icon"></i>
+      <span class="logo-text">ModernTodo</span>
+    </div>
+    <nav>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      
+      <a href="index.html">Try Demo</a>
+    </nav>
+    <button class="cta-button" onclick="window.location.href='index.html'">
+      Get Started <i class="fas fa-arrow-right"></i>
+    </button>
+    <button class="mobile-menu-btn">
+      <i class="fas fa-bars"></i>
+    </button>
+  </header>
+
+  <section class="hero">
+    <div class="hero-content">
+      <h2>Supercharge Your Productivity</h2>
+      <p>ModernTodo helps you focus on what matters with a beautiful, intuitive interface and powerful features that adapt to your workflow.</p>
+      <div class="hero-buttons">
+        <button class="cta-button" onclick="window.location.href='index.html'">
+          Start for Free <i class="fas fa-rocket"></i>
+        </button>
+        <!-- <button class="secondary-button">
+          <i class="fas fa-play-circle"></i> Watch Demo
+        </button> -->
+      </div>
+    </div>
+    <div class="hero-image floating">
+      <img src="image.png" alt="ModernTodo App Interface">
+    </div>
+  </section>
+
+  <section class="features" id="features">
+    <div class="section-header">
+      <h3>Powerful Features</h3>
+      <p>Everything you need to stay organized and productive</p>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-magic"></i>
+        </div>
+        <h4>Smart Task Management</h4>
+        <p>Create, organize, and prioritize tasks with our intuitive drag-and-drop interface.</p>
+       
+      </div>
+      <!-- <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-moon"></i>
+        </div>
+        <h4>Dark/Light Mode</h4>
+        <p>Switch between themes to match your environment and reduce eye strain.</p>
+        
+      </div> -->
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-bell"></i>
+        </div>
+        <h4>Smart Reminders</h4>
+        <p>Never miss a deadline with customizable notifications and alerts.</p>
+        
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-share-alt"></i>
+        </div>
+        <h4>Collaboration</h4>
+        <p>Share lists and assign tasks to team members or family.</p>
+        
+      </div>
+      <!-- <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-chart-line"></i>
+        </div>
+        <h4>Productivity Analytics</h4>
+        <p>Track your completion rates and identify productivity patterns.</p>
+        
+      </div> -->
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-mobile-alt"></i>
+        </div>
+        <h4>Cross-Platform Sync</h4>
+        <p>Access your tasks anywhere with our web, mobile, and desktop apps.</p>
+       
+      </div>
+    </div>
+  </section>
+
+  <section class="stats">
+    <div class="stats-grid">
+      <div class="stat-item">
+        <h3>250K+</h3>
+        <p>Active Users</p>
+      </div>
+      <div class="stat-item">
+        <h3>98%</h3>
+        <p>Satisfaction Rate</p>
+      </div>
+      <div class="stat-item">
+        <h3>10M+</h3>
+        <p>Tasks Completed</p>
+      </div>
+      <div class="stat-item">
+        <h3>24/7</h3>
+        <p>Support Available</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="testimonials" id="testimonials">
+    <div class="section-header">
+      <h3>What Our Users Say</h3>
+      <p>Join thousands of productive people who transformed their workflow</p>
+    </div>
+    <div class="testimonial-grid">
+      <div class="testimonial-card">
+        <div class="testimonial-text">
+          "ModernTodo has completely changed how I organize my work. I'm 3x more productive since I started using it!"
+        </div>
+        <div class="testimonial-author">
+          <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Sarah J." class="author-avatar">
+          <div class="author-info">
+            <h5>Sarah Johnson</h5>
+            <p>Marketing Director</p>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="testimonial-text">
+          "As a developer, I appreciate the clean interface and keyboard shortcuts. It's the perfect balance of simplicity and power."
+        </div>
+        <div class="testimonial-author">
+          <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Michael T." class="author-avatar">
+          <div class="author-info">
+            <h5>Michael Thompson</h5>
+            <p>Software Engineer</p>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="testimonial-text">
+          "I've tried dozens of todo apps, but ModernTodo is the only one that stuck. The mobile experience is flawless."
+        </div>
+        <div class="testimonial-author">
+          <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Emily R." class="author-avatar">
+          <div class="author-info">
+            <h5>Emily Rodriguez</h5>
+            <p>Freelance Designer</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pricing" id="pricing">
+    <div class="section-header">
+      <h3>Simple Pricing</h3>
+      <p>Choose the plan that works best for you</p>
+    </div>
+    <div class="pricing-grid">
+      <div class="pricing-card">
+        <div class="pricing-header">
+          <h4>Basic</h4>
+          <div class="price">₹0<span>/month</span></div>
+        </div>
+        <ul class="pricing-features">
+          <li><i class="fas fa-check"></i> Unlimited tasks</li>
+          <li><i class="fas fa-check"></i> 1 project</li>
+          <li><i class="fas fa-check"></i> Basic reminders</li>
+          <li><i class="fas fa-check"></i> Dark/Light mode</li>
+        </ul>
+        <button class="secondary-button" style="width: 100%;" onclick="window.location.href='index.html'">Get Started</button>
+      </div>
+      <div class="pricing-card popular">
+        <div class="popular-badge">Most Popular</div>
+        <div class="pricing-header">
+          <h4>Pro</h4>
+          <div class="price">₹499<span>/month</span></div>
+        </div>
+        <ul class="pricing-features">
+          <li><i class="fas fa-check"></i> Everything in Basic</li>
+          <li><i class="fas fa-check"></i> Unlimited projects</li>
+          <li><i class="fas fa-check"></i> Smart reminders</li>
+          <li><i class="fas fa-check"></i> Collaboration</li>
+          <li><i class="fas fa-check"></i> Productivity stats</li>
+        </ul>
+        <button class="cta-button" style="width: 100%;">Upgrade Now</button>
+      </div>
+      <div class="pricing-card">
+        <div class="pricing-header">
+          <h4>Team</h4>
+          <div class="price">₹999<span>/month</span></div>
+        </div>
+        <ul class="pricing-features">
+          <li><i class="fas fa-check"></i> Everything in Pro</li>
+          <li><i class="fas fa-check"></i> Up to 10 members</li>
+          <li><i class="fas fa-check"></i> Team analytics</li>
+          <li><i class="fas fa-check"></i> Priority support</li>
+          <li><i class="fas fa-check"></i> Admin controls</li>
+        </ul>
+        <button class="secondary-button" style="width: 100%;">Contact Sales</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <div class="cta-content">
+      <h3>Ready to transform your productivity?</h3>
+      <p>Join over 250,000 users who are getting more done with ModernTodo</p>
+      <button class="cta-button" style="background: white; color: var(--primary);" onclick="window.location.href='index.html'">
+        Get Started for Free <i class="fas fa-arrow-right"></i>
+      </button>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-content">
+      <div class="footer-column">
+        <h4>ModernTodo</h4>
+        <p style="color: var(--text-muted); margin-bottom: 1rem;">The simplest way to organize your work and life.</p>
+        <div class="social-links">
+          <a href="#"><i class="fab fa-twitter"></i></a>
+          <a href="#"><i class="fab fa-facebook"></i></a>
+          <a href="#"><i class="fab fa-instagram"></i></a>
+          <a href="#"><i class="fab fa-linkedin"></i></a>
+        </div>
+      </div>
+      <div class="footer-column">
+        <h4>Product</h4>
+        <ul class="footer-links">
+          <li><a href="#">Features</a></li>
+          <li><a href="#">Pricing</a></li>
+          <li><a href="#">Integrations</a></li>
+          <li><a href="#">Updates</a></li>
+          <li><a href="#">Roadmap</a></li>
+        </ul>
+      </div>
+      <div class="footer-column">
+        <h4>Resources</h4>
+        <ul class="footer-links">
+          <li><a href="#">Help Center</a></li>
+          <li><a href="#">Tutorials</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Webinars</a></li>
+          <li><a href="#">API Docs</a></li>
+        </ul>
+      </div>
+      <div class="footer-column">
+        <h4>Company</h4>
+        <ul class="footer-links">
+          <li><a href="#">About Us</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Contact</a></li>
+          <li><a href="#">Press</a></li>
+          <li><a href="#">Legal</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 ModernTodo. All rights reserved.</p>
+      <div>
+        <a href="#" style="color: var(--text-muted); margin-left: 1rem;">Privacy Policy</a>
+        <a href="#" style="color: var(--text-muted); margin-left: 1rem;">Terms of Service</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+    // Simple animation for demo purposes
+    document.addEventListener('DOMContentLoaded', function() {
+      // Mobile menu toggle
+      const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+      const headerNav = document.querySelector('header nav');
+      
+      mobileMenuBtn.addEventListener('click', function() {
+        headerNav.style.display = headerNav.style.display === 'flex' ? 'none' : 'flex';
+      });
+      
+      // Smooth scrolling for anchor links
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+          e.preventDefault();
+          
+          document.querySelector(this.getAttribute('href')).scrollIntoView({
+            behavior: 'smooth'
+          });
+        });
+      });
+      
+      // Animate elements when they come into view
+      const animateOnScroll = function() {
+        const elements = document.querySelectorAll('.feature-card, .testimonial-card, .pricing-card');
+        
+        elements.forEach(element => {
+          const elementPosition = element.getBoundingClientRect().top;
+          const screenPosition = window.innerHeight / 1.3;
+          
+          if(elementPosition < screenPosition) {
+            element.style.opacity = '1';
+            element.style.transform = 'translateY(0)';
+          }
+        });
+      };
+      
+      // Set initial state
+      document.querySelectorAll('.feature-card, .testimonial-card, .pricing-card').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(20px)';
+        el.style.transition = 'all 0.6s ease';
+      });
+      
+      window.addEventListener('scroll', animateOnScroll);
+      animateOnScroll(); // Run once on load
+    });
+
+    // Toaster notification system
+function showToaster(message) {
+  const toaster = document.getElementById('toaster');
+  const toasterMessage = document.getElementById('toaster-message');
+  
+  toasterMessage.textContent = message;
+  toaster.classList.remove('hide');
+  toaster.classList.add('show');
+  
+  setTimeout(() => {
+    toaster.classList.remove('show');
+    toaster.classList.add('hide');
+  }, 3000);
+}
+
+// Add event listeners for non-functional buttons
+
+  // ... existing code ...
+  
+  // Watch Demo button
+  // const watchDemoBtn = document.querySelector('.secondary-button');
+  // if (watchDemoBtn) {
+  //   watchDemoBtn.addEventListener('click', (e) => {
+  //     e.preventDefault();
+  //     showToaster('Demo video is coming soon!');
+  //   });
+  // }
+  
+  // Social media links
+  document.querySelectorAll('.social-links a').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      showToaster('Social links are placeholder only');
+    });
+  });
+  
+  // Footer links
+  document.querySelectorAll('.footer-links a').forEach(link => {
+    if (link.getAttribute('href') === '#') {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        showToaster('This page is not implemented yet');
+      });
+    }
+  });
+  
+  // Pricing buttons (except the Get Started one)
+  document.querySelectorAll('.pricing-card button').forEach(button => {
+    if (!button.textContent.includes('Get Started')) {
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
+        showToaster('Premium features coming soon!');
+      });
+    }
+  });
+});
+  </script>
+  <div id="toaster" class="toaster">
+  <i class="fas fa-info-circle"></i>
+  <span id="toaster-message">This feature is coming soon!</span>
+</div>
+</body>
+</html>
