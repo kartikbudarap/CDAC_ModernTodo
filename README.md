@@ -110,6 +110,20 @@ This project leverages **four cloud services** from Google Cloud and Firebase to
 
 ---
 
+## Screenshots
+
+### GCP Bucket
+<img src="gcp-bucket.png" width="700px">
+
+### Authentication Users
+
+<img src="Authuser.png" alt="Firebase Auth Users" width="700"/>
+
+### Firestore Data
+
+<img src="todo.png" alt="Firestore Todo Data" width="700"/>
+
+
 ## Tech Stack
 
 * HTML5
