@@ -153,3 +153,12 @@ cd modern-todo-app
 * Cloud Functions deployed using Firebase CLI
 * All configurations follow best practices for security and scalability
 
+---
+
+## Author
+
+**Kartikean Budarap**  
+**Roll No**: 23108B0021  
+**Branch**: EXCS
+
+
