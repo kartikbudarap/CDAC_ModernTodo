@@ -158,7 +158,6 @@ cd modern-todo-app
 ## Author
 
 **Kartikean Budarap**  
-**Roll No**: 23108B0021  
-**Branch**: EXCS
+
 
 
